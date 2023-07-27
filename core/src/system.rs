@@ -195,6 +195,16 @@ where
 
         true
     }
+
+    /// Read a byte from the given address in the MMU
+    pub fn mmu_get8(&self, addr: u16) -> u8 {
+        self.mmu.as_ref().expect("memory not initialized").get8(addr)
+    }
+
+    /// Read a byte from the given address in the MMU
+    pub fn mmu_get16(&self, addr: u16) -> u16 {
+        self.mmu.as_ref().expect("memory not initialized").get16(addr)
+    }
 }
 
 /// Run the emulator with the given configuration.
