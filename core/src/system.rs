@@ -157,7 +157,7 @@ where
         }
     }
 
-    fn step(&mut self, mut mmu: Mmu) -> Mmu {
+    fn step(&mut self, mut mmu: Mmu, gpu_enabled: bool) -> Mmu {
         {
             let mut dbg = self.dbg.borrow_mut();
             dbg.check_signal();
@@ -170,7 +170,9 @@ where
         time += self.cpu.check_interrupt(&mut mmu, &self.ic);
 
         self.dma.borrow_mut().step(&mut mmu);
-        self.gpu.borrow_mut().step(time, &mut mmu);
+        if gpu_enabled {
+            self.gpu.borrow_mut().step(time, &mut mmu);
+        }
         self.timer.borrow_mut().step(time);
         self.serial.borrow_mut().step(time);
         self.joypad.borrow_mut().poll();
@@ -185,13 +187,13 @@ where
     /// Run a single step of emulation.
     /// This function needs to be called repeatedly until it returns `false`.
     /// Returning `false` indicates the end of emulation, and the functions shouldn't be called again.
-    pub fn poll(&mut self) -> bool {
+    pub fn poll(&mut self, gpu_enabled: bool) -> bool {
         if !self.hw.get().borrow_mut().sched() {
             return false;
         }
 
         let mmu = self.mmu.take().unwrap();
-        self.mmu = Some(self.step(mmu));
+        self.mmu = Some(self.step(mmu, gpu_enabled));
 
         true
     }
@@ -224,5 +226,5 @@ pub fn run_debug<T: Hardware + 'static, D: Debugger + 'static>(
 
 fn run_inner<T: Hardware + 'static, D: Debugger + 'static>(cfg: Config, rom: &[u8], hw: T, dbg: D) {
     let mut sys = System::new(cfg, rom, hw, dbg);
-    while sys.poll() {}
+    while sys.poll(true) {}
 }
