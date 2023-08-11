@@ -15,6 +15,9 @@ use crate::sound::Sound;
 use crate::timer::Timer;
 use log::*;
 
+use alloc::vec::Vec;
+use alloc::vec;
+
 /// Configuration of the emulator.
 pub struct Config {
     /// CPU frequency.
@@ -85,7 +88,7 @@ where
     D: Debugger + 'static,
 {
     /// Create a new emulator context.
-    pub fn new<T>(cfg: Config, rom: &[u8], hw: T, dbg: D) -> Self
+    pub fn new<T>(cfg: Config, rom: &[u8], ram: Vec<u8>, hw: T, dbg: D) -> Self
     where
         T: Hardware + 'static,
     {
@@ -97,7 +100,7 @@ where
 
         let dbg = Device::mediate(dbg);
         let cpu = Cpu::new();
-        let mut mmu = Mmu::new();
+        let mut mmu = Mmu::new(ram);
         let sound = Device::new(Sound::new(hw.clone()));
         let ic = Device::new(Ic::new());
         let irq = ic.borrow().irq().clone();
@@ -207,6 +210,11 @@ where
     pub fn mmu_get16(&self, addr: u16) -> u16 {
         self.mmu.as_ref().expect("memory not initialized").get16(addr)
     }
+
+    /// dump the array backing the memory
+    pub fn mmu_dump(&self) -> &[u8] {
+        self.mmu.as_ref().expect("memory not initialized").dump()
+    }
 }
 
 /// Run the emulator with the given configuration.
@@ -225,6 +233,6 @@ pub fn run_debug<T: Hardware + 'static, D: Debugger + 'static>(
 }
 
 fn run_inner<T: Hardware + 'static, D: Debugger + 'static>(cfg: Config, rom: &[u8], hw: T, dbg: D) {
-    let mut sys = System::new(cfg, rom, hw, dbg);
+    let mut sys = System::new(cfg, rom, vec![0u8; 0x10000], hw, dbg);
     while sys.poll(true) {}
 }

@@ -47,13 +47,17 @@ pub struct Mmu {
 
 impl Mmu {
     /// Create a new MMU instance.
-    pub fn new() -> Mmu {
+    pub fn new(ram: Vec<u8>) -> Mmu {
         Mmu {
-            ram: vec![0u8; 0x10000],
+            ram, // vec![0u8; 0x10000],
             handles: HashMap::new(),
             handlers: HashMap::new(),
             hdgen: 0,
         }
+    }
+
+    pub fn ram(&self) -> &[u8] {
+        &self.ram
     }
 
     fn next_handle(&mut self) -> Handle {
@@ -161,5 +165,10 @@ impl Mmu {
     pub fn set16(&mut self, addr: u16, v: u16) {
         self.set8(addr, v as u8);
         self.set8(addr + 1, (v >> 8) as u8);
+    }
+
+    /// Dump the entire array backing the RAM
+    pub fn dump(&self) -> &[u8] {
+        &self.ram
     }
 }
